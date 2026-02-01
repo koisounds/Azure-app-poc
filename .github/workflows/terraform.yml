@@ -1,0 +1,63 @@
+name: terraform
+
+on:
+  pull_request:
+    paths: ["infra/**"]
+  push:
+    branches: ["main"]
+    paths: ["infra/**"]
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  tf:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.7.5
+
+      - name: Azure Login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Terraform Init
+        working-directory: infra
+        run: |
+          terraform init \
+            -backend-config="resource_group_name=${{ secrets.TFSTATE_RG }}" \
+            -backend-config="storage_account_name=${{ secrets.TFSTATE_STORAGE }}" \
+            -backend-config="container_name=${{ secrets.TFSTATE_CONTAINER }}" \
+            -backend-config="key=${{ secrets.TFSTATE_KEY }}"
+
+      - name: Terraform Fmt
+        working-directory: infra
+        run: terraform fmt -check
+
+      - name: Terraform Validate
+        working-directory: infra
+        run: terraform validate
+
+      - name: Terraform Plan (PR)
+        if: github.event_name == 'pull_request'
+        working-directory: infra
+        run: |
+          terraform plan \
+            -var="resource_group_name=${{ secrets.APP_RG }}" \
+            -var="name_prefix=${{ secrets.NAME_PREFIX }}"
+
+      - name: Terraform Apply (main)
+        if: github.event_name == 'push'
+        working-directory: infra
+        run: |
+          terraform apply -auto-approve \
+            -var="resource_group_name=${{ secrets.APP_RG }}" \
+            -var="name_prefix=${{ secrets.NAME_PREFIX }}"
