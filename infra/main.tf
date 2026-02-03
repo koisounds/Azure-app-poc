@@ -17,7 +17,7 @@ resource "azurerm_service_plan" "plan" {
 }
 
 ########################
-# Linux Web App
+# Linux Web App 1
 ########################
 resource "azurerm_linux_web_app" "app" {
   name                = "${var.name_prefix}-app"
