@@ -5,11 +5,13 @@ on:
   pull_request:
     paths:
       - "infra/**"
+      - ".github/workflows/**"
   push:
     branches:
       - "main"
     paths:
       - "infra/**"
+      - ".github/workflows/**"
 
 
 permissions:
