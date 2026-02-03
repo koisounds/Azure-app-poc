@@ -9,6 +9,6 @@ variable "name_prefix" {
 
 variable "sku_name" {
   type    = string
-  default = "F1"
+  default = "B1"
 }
 
